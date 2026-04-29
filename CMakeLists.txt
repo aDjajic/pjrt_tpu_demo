@@ -121,3 +121,5 @@ configure_target(pjrt-demo)
 add_executable(pjrt-demo-newer vector_add_newer_version/main.cpp)
 configure_target(pjrt-demo-newer)
 
+add_executable(two-kernels two_kernels/main.cpp)
+configure_target(two-kernels)
