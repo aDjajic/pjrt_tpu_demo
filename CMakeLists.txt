@@ -84,33 +84,40 @@ endif()
 # The executable
 # ------------------------------------------------------------------------------
 
-add_executable(pjrt-demo main.cpp)
+function(configure_target target_name)
+    target_include_directories(${target_name} PRIVATE "${XLA_SRC_PATH}")
 
-target_include_directories(pjrt-demo PRIVATE "${XLA_SRC_PATH}")
+    if(HAVE_JAXLIB_MOSAIC)
+        target_include_directories(${target_name} PRIVATE "${JAXLIB_SRC_PATH}")
+        target_compile_definitions(${target_name} PRIVATE HAVE_JAXLIB_MOSAIC=1)
 
-if(HAVE_JAXLIB_MOSAIC)
-    target_include_directories(pjrt-demo PRIVATE "${JAXLIB_SRC_PATH}")
-    target_compile_definitions(pjrt-demo PRIVATE HAVE_JAXLIB_MOSAIC=1)
-
-    # The Mosaic C API header includes mlir-c/IR.h and mlir-c/Support.h.
-    # These come from LLVM/MLIR. If MLIR_SRC_PATH is set, use it; otherwise
-    # assume the system toolchain provides them (e.g. via pkg-config).
-    if(DEFINED MLIR_SRC_PATH AND NOT MLIR_SRC_PATH STREQUAL "")
-        target_include_directories(pjrt-demo PRIVATE
-            "${MLIR_SRC_PATH}/include")
+        # The Mosaic C API header includes mlir-c/IR.h and mlir-c/Support.h.
+        # These come from LLVM/MLIR. If MLIR_SRC_PATH is set, use it; otherwise
+        # assume the system toolchain provides them (e.g. via pkg-config).
+        if(DEFINED MLIR_SRC_PATH AND NOT MLIR_SRC_PATH STREQUAL "")
+            target_include_directories(${target_name} PRIVATE
+                "${MLIR_SRC_PATH}/include")
+        endif()
     endif()
-endif()
 
-# Optional: if the jaxlib Mosaic C API .so is known at configure time,
-# link it statically. Not required — the example dlopens libtpu.so at
-# runtime via a path passed on the command line.
-if(HAVE_JAXLIB_MOSAIC AND DEFINED JAXLIB_MOSAIC_C_LIB
-   AND NOT JAXLIB_MOSAIC_C_LIB STREQUAL "")
-    target_link_libraries(pjrt-demo PRIVATE "${JAXLIB_MOSAIC_C_LIB}")
-endif()
+    # Optional: if the jaxlib Mosaic C API .so is known at configure time,
+    # link it statically. Not required — the example dlopens libtpu.so at
+    # runtime via a path passed on the command line.
+    if(HAVE_JAXLIB_MOSAIC AND DEFINED JAXLIB_MOSAIC_C_LIB
+    AND NOT JAXLIB_MOSAIC_C_LIB STREQUAL "")
+        target_link_libraries(${target_name} PRIVATE "${JAXLIB_MOSAIC_C_LIB}")
+    endif()
 
-# dlopen / dlsym: the TPU plugin path is supplied at runtime, so we always
-# need libdl linked.
-if(APPLE OR UNIX)
-    target_link_libraries(pjrt-demo PRIVATE ${CMAKE_DL_LIBS})
-endif()
+    # dlopen / dlsym: the TPU plugin path is supplied at runtime, so we always
+    # need libdl linked.
+    if(APPLE OR UNIX)
+        target_link_libraries(${target_name} PRIVATE ${CMAKE_DL_LIBS})
+    endif()
+endfunction()
+
+add_executable(pjrt-demo main.cpp)
+configure_target(pjrt-demo)
+
+add_executable(pjrt-demo-newer vector_add_newer_version/main.cpp)
+configure_target(pjrt-demo-newer)
+
