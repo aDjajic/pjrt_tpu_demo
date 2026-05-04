@@ -123,3 +123,6 @@ configure_target(pjrt-demo-newer)
 
 add_executable(two-kernels two_kernels/main.cpp)
 configure_target(two-kernels)
+
+add_executable(three-kernels three_kernels/main.cpp)
+configure_target(three-kernels)
