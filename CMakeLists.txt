@@ -126,3 +126,9 @@ configure_target(two-kernels)
 
 add_executable(three-kernels three_kernels/main.cpp)
 configure_target(three-kernels)
+
+add_executable(pjrt-demo-int vector_add_int/main.cpp)
+configure_target(pjrt-demo-int)
+
+add_executable(pjrt-demo-int16 vector_add_int16/main.cpp)
+configure_target(pjrt-demo-int16)
