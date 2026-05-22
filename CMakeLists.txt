@@ -132,3 +132,9 @@ configure_target(pjrt-demo-int)
 
 add_executable(pjrt-demo-int16 vector_add_int16/main.cpp)
 configure_target(pjrt-demo-int16)
+
+add_executable(example-no-pow-2 example_no_pow_2/main.cpp)
+configure_target(example-no-pow-2)
+
+add_executable(example-grid example_grid/main.cpp)
+configure_target(example-grid)
