@@ -1,0 +1,31 @@
+= control target key start
+LH: loop header
+LB: loop body
+LE: loop exit
+PB: predicated region body
+PF: predicated region fallthrough
+CT: control target
+= control target key end
+
+     0   :  { %s91_s0 = inlined_call_operand.vmem [shape: f32[8,128], index: 0, kind: input, shape index: {}] /* operand 0 */  ;;  %s92_s1 = inlined_call_operand.<no memory space> [shape: f32[], index: 1, kind: input, shape index: {}] /* operand 1 */  ;;  %s93_s2 = inlined_call_operand.hbm [shape: f32[128], index: 2, kind: output, shape index: {}] /* operand 2 */ } /* entry bundle: %reduce_sum.7 = reduce(%copy-done, %constant.1) */
+   0x1   :  { %v4_v0 = vstv %s92_s1  ;;  %v6_v1 = vld [vmem:[%s91_s0] sm:$0xff]  ;;  %s66_s0 = smov [#allocation0] /* materialized constant */ }
+   0x2   :  { %5 = vst [vmem:[#allocation0] sm:$0xff] /*vst_source=*/%v4_v0  ;;  %v8_v2 = vrot.slane %v6_v1, 4  ;;  %s36_s12 = sshll.u32 %s66_s0, 4  ;;  %s37_s12 = int_to_ptr.vmem [resolvable:$true] %s36_s12 }
+   0x3   :  { %s44_s13 = scalar_lea.vmem %s37_s12, 16  ;;  %s48_s14 = scalar_lea.vmem %s37_s12, 128 }
+   0x4   :  { %v11_v3 = vadd.f32 %v8_v2, %v6_v1  ;;  %p45_p0 = scmp.ne.s32.totalorder %s37_s12, %s44_s13  ;;  %p49_p1 = scmp.lt.s32.totalorder %s37_s12, %s37_s12 }
+   0x5   :  { %p50_p2 = scmp.lt.s32.totalorder %s48_s14, %s44_s13 }
+   0x6   :  { %v13_v4 = vrot.slane %v11_v3, 2 }
+   0x7   :  { %p51_p3 = por %p50_p2, %p49_p1 }
+   0x8   :  { %v16_v5 = vadd.f32 %v13_v4, %v11_v3 }
+   0x9   :  { %v7_v7 = vld [vmem:[#allocation0] ss:$0 sm:$0xff]  ;;  %p52_p4 = pnand %p51_p3, %p45_p0 }
+   0xa   :  { %v18_v6 = vrot.slane %v16_v5, 1 }
+   0xb   :  { %v21_v8 = vadd.f32 %v18_v6, %v16_v5 }
+   0xc   :  { %v25_v9 = vadd.f32 %v21_v8, %v7_v7 }
+   0xd   :  { %27 = vst [vmem:[#allocation0] sm:$0x1] /*vst_source=*/%v25_v9 }
+   0xe   :  { %v32_v10 = vld [vmem:[#allocation0] sm:$0x1] }
+   0xf   :  { %35 = vst [vmem:[#allocation0] sm:$0x1] /*vst_source=*/%v32_v10 }
+  0x10   :  { %55 = shalt.err (!%p52_p4) /* BoundsCheck 6 [deref of %s37] for %39 = dma.vmem_to_hbm [thread:$0]  /*vmem=*/%s37, /*size_in_granules=*/16, /*hbm=*/%s2, /*dst_syncflagno=*/[#allocation1]
+hlo: reduce_sum.7
+ */ }
+  0x11   :  { %39 = dma.vmem_to_hbm [thread:$0]  /*vmem=*/%s37_s12, /*size_in_granules=*/16, /*hbm=*/%s93_s2, /*dst_syncflagno=*/[#allocation1] }
+  0x12   :  { %64 = dma.done.wait [#allocation1], 16 /* fusion-emitter-dma-wait */ }
+  0x13   :  { %65 = vsyncadd [#allocation1], 4294967280 } /* exit bundle: %reduce_sum.7 = reduce(%copy-done, %constant.1) */

@@ -40,7 +40,7 @@ from jax import lax
 
 def sum_kernel(x_ref, o_ref):
     # x_ref: (N, D)  ->  o_ref: (1, D)
-    # Sabira svih N redova iz x_ref u jedan red.
+    # Sums all N rows of x_ref into a single row.
     def body(i, acc):
         return acc + x_ref[i]
 

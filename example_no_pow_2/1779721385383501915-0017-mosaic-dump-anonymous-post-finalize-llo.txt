@@ -1,0 +1,20 @@
+module attributes {stable_mosaic.version = 11 : i64} {
+  func.func @add_kernel(%arg0: i32 {llo.type = memref<125xf32, #tpu.tiled<(128),[1]>, #tpu.memory_space<vmem>>}, %arg1: i32 {llo.type = memref<125xf32, #tpu.tiled<(128),[1]>, #tpu.memory_space<vmem>>}, %arg2: i32 {llo.type = memref<125xf32, #tpu.tiled<(128),[1]>, #tpu.memory_space<vmem>>}) attributes {dimension_semantics = [], scalar_prefetch = 0 : i64, scratch_operands = 0 : i64, tpu.core_type = #tpu.core_type<tc>} {
+    %0 = llo.constant {value = 1 : ui32} : ui32
+    %1 = llo.constant {value = dense<125> : vector<8x128xi32>} : vector<8x128xi32>
+    %2 = llo.constant {value = dense<0> : vector<8x128xi32>} : vector<8x128xi32>
+    %3 = llo.constant {value = 0 : i32} : i32
+    %4 = "llo.saddr_scaled"(%arg0, %3) <{multiplier_in_bytes = 512 : i32}> : (i32, i32) -> i32
+    %5 = llo.vector_load %4 masked %0 : i32 -> vector<8x128xf32>
+    %6 = "llo.saddr_scaled"(%arg1, %3) <{multiplier_in_bytes = 512 : i32}> : (i32, i32) -> i32
+    %7 = llo.vector_load %6 masked %0 : i32 -> vector<8x128xf32>
+    %8 = llo.vadd.f32 %5, %7 : vector<8x128xf32>
+    %9 = "llo.saddr_scaled"(%arg2, %3) <{multiplier_in_bytes = 512 : i32}> : (i32, i32) -> i32
+    %10 = llo.vlaneseq : vector<8x128xi32>
+    %11 = llo.vcmp.ge.s32 %10, %2 : vector<8x128xi32>, vector<8x128xi32> -> vector<8x128xi1>
+    %12 = llo.vcmp.lt.s32 %10, %1 : vector<8x128xi32>, vector<8x128xi32> -> vector<8x128xi1>
+    %13 = llo.vmand %11, %12 : vector<8x128xi1>
+    llo.vector_store_masked %8 into %9 masked %13 slmask %0 : vector<8x128xf32> into i32, vector<8x128xi1>
+    return {in_layout = []}
+  }
+}

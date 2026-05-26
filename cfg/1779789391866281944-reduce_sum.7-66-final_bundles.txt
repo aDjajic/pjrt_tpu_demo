@@ -1,0 +1,33 @@
+= control target key start
+LH: loop header
+LB: loop body
+LE: loop exit
+PB: predicated region body
+PF: predicated region fallthrough
+CT: control target
+= control target key end
+
+     0   :  { %v7_v0 = vlaneseq  ;;  %s95_s0 = inlined_call_operand.vmem [shape: f32[3,128], index: 0, kind: input, shape index: {}] /* operand 0 */  ;;  %s96_s1 = inlined_call_operand.<no memory space> [shape: f32[], index: 1, kind: input, shape index: {}] /* operand 1 */  ;;  %s97_s2 = inlined_call_operand.hbm [shape: f32[128], index: 2, kind: output, shape index: {}] /* operand 2 */ } /* entry bundle: %reduce_sum.7 = reduce(%copy-done, %constant.1) */
+   0x1   :  { %v4_v1 = vstv %s96_s1  ;;  %v6_v2 = vld [vmem:[%s95_s0] sm:$0x7]  ;;  %s70_s0 = smov [#allocation0] /* materialized constant */ }
+   0x2   :  { %5 = vst [vmem:[#allocation0] sm:$0xff] /*vst_source=*/%v4_v1  ;;  %v8_v3 = vshrl.u32 %v7_v0, 7  ;;  %s40_s12 = sshll.u32 %s70_s0, 4  ;;  %s41_s12 = int_to_ptr.vmem [resolvable:$true] %s40_s12 }
+   0x3   :  { %s48_s13 = scalar_lea.vmem %s41_s12, 16  ;;  %s52_s14 = scalar_lea.vmem %s41_s12, 128 }
+   0x4   :  { %vm9_vm0 = vcmp.lt.s32.totalorder %v8_v3, 3  ;;  %p49_p0 = scmp.ne.s32.totalorder %s41_s12, %s48_s13  ;;  %p53_p1 = scmp.lt.s32.totalorder %s41_s12, %s41_s12 }
+   0x5   :  { %v10_v4 = vsel /*vm=*/%vm9_vm0, /*on_true_vy=*/%v6_v2, /*on_false_vx=*/%v4_v1  ;;  %p54_p2 = scmp.lt.s32.totalorder %s52_s14, %s48_s13 }
+   0x6   :  { %v12_v5 = vrot.slane %v10_v4, 4 }
+   0x7   :  { %p55_p3 = por %p54_p2, %p53_p1 }
+   0x8   :  { %v15_v6 = vadd.f32 %v12_v5, %v10_v4 }
+   0x9   :  { %v11_v10 = vld [vmem:[#allocation0] ss:$0 sm:$0xff]  ;;  %p56_p4 = pnand %p55_p3, %p49_p0 }
+   0xa   :  { %v17_v7 = vrot.slane %v15_v6, 2 }
+   0xb   :  { %v20_v8 = vadd.f32 %v17_v7, %v15_v6 }
+   0xc   :  { %v22_v9 = vrot.slane %v20_v8, 1 }
+   0xd   :  { %v25_v11 = vadd.f32 %v22_v9, %v20_v8 }
+   0xe   :  { %v29_v12 = vadd.f32 %v25_v11, %v11_v10 }
+   0xf   :  { %31 = vst [vmem:[#allocation0] sm:$0x1] /*vst_source=*/%v29_v12 }
+  0x10   :  { %v36_v13 = vld [vmem:[#allocation0] sm:$0x1] }
+  0x11   :  { %39 = vst [vmem:[#allocation0] sm:$0x1] /*vst_source=*/%v36_v13 }
+  0x12   :  { %59 = shalt.err (!%p56_p4) /* BoundsCheck 6 [deref of %s41] for %43 = dma.vmem_to_hbm [thread:$0]  /*vmem=*/%s41, /*size_in_granules=*/16, /*hbm=*/%s2, /*dst_syncflagno=*/[#allocation1]
+hlo: reduce_sum.7
+ */ }
+  0x13   :  { %43 = dma.vmem_to_hbm [thread:$0]  /*vmem=*/%s41_s12, /*size_in_granules=*/16, /*hbm=*/%s97_s2, /*dst_syncflagno=*/[#allocation1] }
+  0x14   :  { %68 = dma.done.wait [#allocation1], 16 /* fusion-emitter-dma-wait */ }
+  0x15   :  { %69 = vsyncadd [#allocation1], 4294967280 } /* exit bundle: %reduce_sum.7 = reduce(%copy-done, %constant.1) */
