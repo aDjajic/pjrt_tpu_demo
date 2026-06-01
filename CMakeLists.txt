@@ -138,3 +138,6 @@ configure_target(example-no-pow-2)
 
 add_executable(example-grid example_grid/main.cpp)
 configure_target(example-grid)
+
+add_executable(profiler profiler/main.cpp)
+configure_target(profiler)
