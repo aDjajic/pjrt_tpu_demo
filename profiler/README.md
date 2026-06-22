@@ -29,23 +29,20 @@ The output binary is `build/profiler`.
     /path/to/site-packages/libtpu/libtpu.so
 ```
 
-The trace file is written to `trace.xplane.pb` in the working directory.
+The binary writes the trace directly into the layout TensorBoard expects,
+creating the directory tree automatically:
+
+```
+profile_logs/plugins/profile/<YYYY_MM_DD_HH_MM_SS>/trace.xplane.pb
+```
+
+Each run gets its own timestamped folder, so TensorBoard lists every
+profiling run separately. No manual copying or folder creation is needed.
 
 ## Viewing in TensorBoard
 
-TensorBoard's profile plugin expects a specific directory layout and the
-`.xplane.pb` extension:
+Point TensorBoard at the `profile_logs/` directory created by the run:
 
 ```bash
-mkdir -p logs/run1/plugins/profile/session1
-cp trace.xplane.pb logs/run1/plugins/profile/session1/trace.xplane.pb
-
-tensorboard --logdir logs/ --port 6006
+tensorboard --logdir profile_logs/ --port 6006
 ```
-
-## Known limitation: no device timing
-
-Through `PJRT_Profiler_Extension`'s `PLUGIN_Profiler_Create/Start/Stop/CollectData`
-path, libtpu captures host TraceMe events and the HLO graph (so TensorBoard
-will show 50/50 host/device op placement) but **does not capture device-side
-timing** (MXU / VPU / HBM cycles). All TPU utilization metrics will read 0%.

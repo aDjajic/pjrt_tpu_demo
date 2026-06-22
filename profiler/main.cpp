@@ -35,6 +35,9 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <chrono>
+#include <ctime>
+#include <filesystem>
 
 #include "xla/pjrt/c/pjrt_c_api.h"
 #include "xla/pjrt/c/pjrt_c_api_profiler_extension.h"
@@ -204,6 +207,31 @@ std::string LoadTextFile(const std::string& path) {
     return ss.str();
 }
 
+// Builds the TensorBoard/XProf trace path:
+//   profile_logs/plugins/profile/<YYYY_MM_DD_HH_MM_SS>/trace.xplane.pb
+// and creates the directory tree. The timestamped run folder lets TensorBoard
+// list each profiling run separately. Returns "" on failure.
+std::string MakeProfileOutputPath() {
+    const std::time_t now = std::chrono::system_clock::to_time_t(
+        std::chrono::system_clock::now());
+    std::tm tm_buf{};
+    localtime_r(&now, &tm_buf);
+    char stamp[32];
+    std::strftime(stamp, sizeof(stamp), "%Y_%m_%d_%H_%M_%S", &tm_buf);
+
+    namespace fs = std::filesystem;
+    const fs::path dir =
+        fs::path("profile_logs") / "plugins" / "profile" / stamp;
+
+    std::error_code ec;
+    fs::create_directories(dir, ec);
+    if (ec) {
+        std::cerr << "Failed to create " << dir << ": " << ec.message() << "\n";
+        return {};
+    }
+    return (dir / "trace.xplane.pb").string();
+}
+
 // ===--------------------------------------------------------------------=== //
 // StableHLO wrapping
 // ===--------------------------------------------------------------------=== //
@@ -272,15 +300,15 @@ std::string WrapMosaicInStableHlo(const std::string& mosaic_text) {
     return
         "module @wrapper {\n"
         "  func.func @main(\n"
-        "      %lhs: tensor<8x128xf32>,\n"
-        "      %rhs: tensor<8x128xf32>\n"
-        "  ) -> tensor<8x128xf32> {\n"
+        "      %lhs: tensor<256x256xf32>,\n"
+        "      %rhs: tensor<256x256xf32>\n"
+        "  ) -> tensor<256x256xf32> {\n"
         "    %out = stablehlo.custom_call @tpu_custom_call(%lhs, %rhs) {\n"
         "      backend_config = \"" + json + "\",\n"
         "      operand_layouts = [dense<[1, 0]> : tensor<2xindex>, dense<[1, 0]> : tensor<2xindex>],\n"
         "      result_layouts = [dense<[1, 0]> : tensor<2xindex>]"
-        "    } : (tensor<8x128xf32>, tensor<8x128xf32>) -> tensor<8x128xf32>\n"
-        "    return %out : tensor<8x128xf32>\n"
+        "    } : (tensor<256x256xf32>, tensor<256x256xf32>) -> tensor<256x256xf32>\n"
+        "    return %out : tensor<256x256xf32>\n"
         "  }\n"
         "}\n";
 }
@@ -604,8 +632,8 @@ int main(int argc, char** argv) {
     }
 
     // ---- 7. Prepare host-side inputs ----------------------------------
-    constexpr size_t ROWS = 8;
-    constexpr size_t COLS = 128;
+    constexpr size_t ROWS = 256;
+    constexpr size_t COLS = 256;
     constexpr size_t N = ROWS * COLS;  // 1024
     std::vector<float> host_lhs(N), host_rhs(N);
     for (size_t i = 0; i < N; ++i) {
@@ -682,7 +710,6 @@ int main(int argc, char** argv) {
         //   5  version             = 1              -> 0x28 0x01
         //   6  device_type         = TPU (3)        -> 0x30 0x03
         //   7  enable_hlo_proto    = true (1)       -> 0x38 0x01
-        //   7  enable_hlo_proto    = true (1)       -> 0x38 0x01
         static constexpr unsigned char kProfileOptions[] = {
             0x10, 0x02, 0x18, 0x01, 0x28, 0x01, 0x30, 0x03, 0x38, 0x01,
         };
@@ -740,12 +767,6 @@ int main(int argc, char** argv) {
     }
     std::cout << "[8] Executed kernel\n";
 
-    // --- Profiler teardown ----------------------------------------------
-    if (profiler) {
-        if (profiler->Stop()) {
-            profiler->CollectToFile("trace.xplane.pb");
-        }
-    }
 
     // ---- 10. Download output ------------------------------------------
     std::vector<float> host_out(N);
@@ -772,10 +793,6 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 8; ++i) {
         std::cout << host_out[i] << " ";
     }
-    std::cout << "\nExpected:\n  ";
-    for (int i = 0; i < 8; ++i) {
-        std::cout << (host_lhs[i] + host_rhs[i]) << " ";
-    }
     std::cout << "\n";
 
     // ---- 12. Cleanup --------------------------------------------------
@@ -801,6 +818,15 @@ int main(int argc, char** argv) {
         a.struct_size = PJRT_Client_Destroy_Args_STRUCT_SIZE;
         a.client = client;
         api->PJRT_Client_Destroy(&a);
+    }
+    // --- Profiler teardown ----------------------------------------------
+    if (profiler) {
+        if (profiler->Stop()) {
+            const std::string out_path = MakeProfileOutputPath();
+            if (!out_path.empty()) {
+                profiler->CollectToFile(out_path);
+            }
+        }
     }
 
     std::cout << "\n[done]\n";
