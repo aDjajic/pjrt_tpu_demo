@@ -141,3 +141,6 @@ configure_target(example-grid)
 
 add_executable(profiler profiler/main.cpp)
 configure_target(profiler)
+
+add_executable(device-introspection device_introspection/main.cpp)
+configure_target(device-introspection)
