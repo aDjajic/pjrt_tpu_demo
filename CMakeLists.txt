@@ -147,3 +147,11 @@ configure_target(device-introspection)
 
 add_executable(pjrt-demo-4tpu matrix_add_4tpu/main.cpp)
 configure_target(pjrt-demo-4tpu)
+
+# Cross-compilation (AOT) demo: needs libtpu.so but no TPU hardware.
+add_executable(pjrt-aot aot_compile/main.cpp)
+configure_target(pjrt-aot)
+
+# Counterpart to pjrt-aot: loads and runs the blob. Needs a real TPU.
+add_executable(pjrt-aot-run aot_compile/run_blob.cpp)
+configure_target(pjrt-aot-run)
