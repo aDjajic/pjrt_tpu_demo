@@ -155,3 +155,8 @@ configure_target(pjrt-aot)
 # Counterpart to pjrt-aot: loads and runs the blob. Needs a real TPU.
 add_executable(pjrt-aot-run aot_compile/run_blob.cpp)
 configure_target(pjrt-aot-run)
+
+# Two processes, two chips: each process pins one chip via TPU_VISIBLE_CHIPS
+# and runs its own single-device client. See two_procs_two_chips/README.md.
+add_executable(two-procs-two-chips two_procs_two_chips/main.cpp)
+configure_target(two-procs-two-chips)
