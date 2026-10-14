@@ -160,3 +160,7 @@ configure_target(pjrt-aot-run)
 # and runs its own single-device client. See two_procs_two_chips/README.md.
 add_executable(two-procs-two-chips two_procs_two_chips/main.cpp)
 configure_target(two-procs-two-chips)
+
+# Timing comparison of PJRT_Client_BufferFromHostBuffer host-buffer semantics
+add_executable(host-buffer-semantics host_buffer_semantics/main.cpp)
+configure_target(host-buffer-semantics)
